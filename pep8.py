@@ -115,9 +115,12 @@ DEFAULT_IGNORE = 'E24'
 MAX_LINE_LENGTH = 79
 
 DEFAULT_CONFIG = os.path.expanduser('~/.pep8.py.conf')
-DEFAULT_OPTION_LIST = ('verbose', 'quiet', 'repeat', 'exclude', 'filename',
-    'select', 'ignore', 'show-source', 'show-pep8', 'statistics',
-    'count', 'benchmark', 'testsuite', 'doctest', 'config')
+STRING_OPTIONS = ('exclude', 'filename', 'select', 'ignore',
+    'show_source', 'testsuite', 'config')
+BOOL_OPTIONS = ('repeat', 'show_source', 'show_pep8', 'statistics',
+    'count', 'benchmark', 'doctest')
+INT_OPTIONS = ('verbose', 'quiet', 'max_line_length')
+
 
 INDENT_REGEX = re.compile(r'([ \t]*)')
 RAISE_COMMA_REGEX = re.compile(r'raise\s+\w+\s*(,)')
@@ -1257,30 +1260,27 @@ def selftest():
             print("Test passed.")
 
 
-def process_options(arglist=None):
-    """
-    Process options passed either via arglist or via command line args.
-    """
-    global options, args
+def get_parser(defaults):
     parser = OptionParser(version=__version__,
                           usage="%prog [options] input ...")
-    parser.add_option('-v', '--verbose', default=0, action='count',
+    parser.set_defaults(**defaults)
+    parser.add_option('-v', '--verbose', action='count',
                       help="print status messages, or debug with -vv")
-    parser.add_option('-q', '--quiet', default=0, action='count',
+    parser.add_option('-q', '--quiet', action='count',
                       help="report only file names, or nothing with -qq")
     parser.add_option('-r', '--repeat', action='store_true',
                       help="show all occurrences of the same error")
-    parser.add_option('--exclude', metavar='patterns', default=DEFAULT_EXCLUDE,
+    parser.add_option('--exclude', metavar='patterns',
                       help="exclude files or directories which match these "
                         "comma separated patterns (default: %s)" %
                         DEFAULT_EXCLUDE)
-    parser.add_option('--filename', metavar='patterns', default='*.py',
+    parser.add_option('--filename', metavar='patterns',
                       help="when parsing directories, only check filenames "
                         "matching these comma separated patterns (default: "
                         "*.py)")
-    parser.add_option('--select', metavar='errors', default='',
+    parser.add_option('--select', metavar='errors',
                       help="select errors and warnings (e.g. E,W6)")
-    parser.add_option('--ignore', metavar='errors', default='',
+    parser.add_option('--ignore', metavar='errors',
                       help="skip errors and warnings (e.g. E4,W)")
     parser.add_option('--show-source', action='store_true',
                       help="show source code for each error")
@@ -1297,32 +1297,54 @@ def process_options(arglist=None):
     parser.add_option('--testsuite', metavar='dir',
                       help="run regression tests from dir")
     parser.add_option('--max-line-length', type='int', metavar='n',
-                      default=MAX_LINE_LENGTH,
                       help="set to a higher value to relax pep8 "
                       "line length restictions")
     parser.add_option('--doctest', action='store_true',
                       help="run doctest on myself")
     parser.add_option('--config', metavar='config-file',
-                      default=DEFAULT_CONFIG,
                       help='Config file location')
+    return parser
+
+
+def process_options(arglist=None):
+    """
+    Process options passed either via arglist or via command line args.
+    """
+    global options, args
+    default_args = {
+        'verbose': 0,
+        'quiet': 0,
+        'exclude': DEFAULT_EXCLUDE,
+        'filename': '*.py',
+        'select': '',
+        'ignore': '',
+        'max_line_length': MAX_LINE_LENGTH,
+        'config': DEFAULT_CONFIG,
+    }
+
+    parser = get_parser(default_args)
     options, args = parser.parse_args(arglist)
-    if options.testsuite:
-        args.append(options.testsuite)
-    if not args and not options.doctest:
-        parser.error('input not specified')
 
     if options.config and os.path.isfile(options.config):
         config = ConfigParser.RawConfigParser()
         config.read(options.config)
-        for opt in DEFAULT_OPTION_LIST:
-            p_opt = opt.replace('-', '_')
-            try:
-                options.__dict__[p_opt] = config.get('pep8', opt)
-            except ConfigParser.NoOptionError:
-                try:
-                    options.__dict__[p_opt] = config.get('pep8', p_opt)
-                except ConfigParser.NoOptionError:
-                    pass
+        for opt in STRING_OPTIONS:
+            if config.has_option('pep8', opt):
+                default_args[opt] = config.get('pep8', opt)
+        for opt in INT_OPTIONS:
+            if config.has_option('pep8', opt):
+                default_args[opt] = config.getint('pep8', opt)
+        for opt in BOOL_OPTIONS:
+            if config.has_option('pep8', opt):
+                default_args[opt] = config.getboolean('pep8', opt)
+
+        parser = get_parser(default_args)
+        options, args = parser.parse_args(arglist)
+
+    if options.testsuite:
+        args.append(options.testsuite)
+    if not args and not options.doctest:
+        parser.error('input not specified')
 
     options.prog = os.path.basename(sys.argv[0])
     options.exclude = options.exclude.split(',')
