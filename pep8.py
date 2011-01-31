@@ -1319,15 +1319,15 @@ def process_options(arglist=None):
         'select': '',
         'ignore': '',
         'max_line_length': MAX_LINE_LENGTH,
-        'config': DEFAULT_CONFIG,
     }
 
     parser = get_parser(default_args)
     options, args = parser.parse_args(arglist)
 
-    if options.config and os.path.isfile(options.config):
+    config_file = options.config or DEFAULT_CONFIG
+    if os.path.isfile(config_file):
         config = ConfigParser.RawConfigParser()
-        config.read(options.config)
+        config.read(config_file)
         for opt in STRING_OPTIONS:
             if config.has_option('pep8', opt):
                 default_args[opt] = config.get('pep8', opt)
@@ -1340,6 +1340,8 @@ def process_options(arglist=None):
 
         parser = get_parser(default_args)
         options, args = parser.parse_args(arglist)
+    elif options.config:
+        parser.error('config file does not exist: %s' % config_file)
 
     if options.testsuite:
         args.append(options.testsuite)
