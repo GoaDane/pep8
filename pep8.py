@@ -114,7 +114,7 @@ DEFAULT_EXCLUDE = '.svn,CVS,.bzr,.hg,.git'
 DEFAULT_IGNORE = 'E24'
 MAX_LINE_LENGTH = 79
 
-DEFAULT_CONFIG = os.path.expanduser('~/.pep8.py.conf')
+DEFAULT_CONFIG = os.path.expanduser('~/.pep8rc')
 STRING_OPTIONS = ('exclude', 'filename', 'select', 'ignore',
     'show_source', 'testsuite', 'config')
 BOOL_OPTIONS = ('repeat', 'show_source', 'show_pep8', 'statistics',
