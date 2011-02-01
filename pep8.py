@@ -1301,7 +1301,7 @@ def get_parser(defaults):
                       "line length restictions")
     parser.add_option('--doctest', action='store_true',
                       help="run doctest on myself")
-    parser.add_option('--config', metavar='config-file',
+    parser.add_option('--config', metavar='file',
                       help='Config file location')
     return parser
 

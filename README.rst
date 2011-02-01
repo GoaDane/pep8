@@ -110,7 +110,9 @@ Quick help is available on the command line::
     --benchmark          measure processing speed
     --testsuite=dir      run regression tests from dir
     --max-line-length=n  set to a higher value to relax pep8 line length
+                         restictions
     --doctest            run doctest on myself
+    --config=file        Config file location
 
 Feedback
 --------
